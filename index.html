@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex"><title>Expense Monitor</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--tx:#1d1d1b;--mu:#76746d;--bd:#e4e2da;--ac:#0f6e56;--ac2:#d98a2b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161615;--card:#212120;--tx:#eeede8;--mu:#9b998f;--bd:#34332f;--ac:#3fbf9b;--ac2:#e6a24a}}
+:root[data-theme="dark"]{--bg:#161615;--card:#212120;--tx:#eeede8;--mu:#9b998f;--bd:#34332f;--ac:#3fbf9b;--ac2:#e6a24a}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:980px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:4px 0 14px}h2{font-size:14px;margin:0 0 10px;color:var(--mu);text-transform:uppercase;letter-spacing:.05em}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.stat b{display:block;font-size:20px}.stat span{color:var(--mu);font-size:12px}
+.cols{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+input,select,button,textarea{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:7px 9px;min-width:0}
+button{cursor:pointer;background:var(--ac);color:#fff;border:0}button.g{background:var(--bg);color:var(--tx);border:1px solid var(--bd)}
+form,.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}form input{flex:1 1 120px}
+.bar{display:grid;grid-template-columns:minmax(90px,38%) 1fr auto;gap:8px;align-items:center;margin:5px 0;font-size:13px}
+.bar i{display:block;height:10px;border-radius:5px;background:var(--ac)}.bar small{color:var(--mu)}
+.t{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--bd);white-space:nowrap}td.n,th.n{text-align:right}
+.pill{background:var(--bg);border:1px solid var(--bd);border-radius:20px;padding:1px 8px;font-size:12px}
+.prog{height:12px;background:var(--bg);border:1px solid var(--bd);border-radius:6px;overflow:hidden}.prog i{display:block;height:100%;background:var(--ac2)}
+.tg{cursor:pointer;padding:3px 4px;border-radius:6px}.tg:hover{background:var(--bg)}
+.on{background:var(--bg);font-weight:600}
+.ent{margin:2px 0 6px 18px;font-size:12px;color:var(--mu)}.en{display:flex;justify-content:space-between;gap:8px;padding:2px 0}
+.x{background:none;color:var(--mu);padding:0 6px}
+button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}input[type=date]{min-height:36px}
+@media(max-width:600px){
+main{padding:12px calc(12px + env(safe-area-inset-right,0px)) 28px calc(12px + env(safe-area-inset-left,0px))}
+h1{font-size:20px}.card{padding:12px;border-radius:14px}
+.grid{grid-template-columns:1fr 1fr}.stat b{font-size:18px}
+input,select,button,textarea{font-size:16px;min-height:44px}
+form{display:grid;grid-template-columns:1fr 1fr}form button{grid-column:1/-1}
+.row>*{flex:1 1 40%}.row>span{flex:0 0 auto}
+.bar{grid-template-columns:1fr auto;row-gap:3px;padding:7px 4px}.bar i{grid-column:1/-1;order:3}
+.ent{margin-left:6px}.en{padding:4px 0}
+.t{overflow:visible}table,tbody{display:block}tr:first-child{display:none}
+tr{display:block;border:1px solid var(--bd);border-radius:10px;margin-bottom:8px;padding:6px 10px}
+td{display:flex;justify-content:space-between;gap:12px;white-space:normal;border:0;padding:3px 0;text-align:right}
+td::before{content:attr(data-l);color:var(--mu);text-align:left}td:empty{display:none}td.n{text-align:right}
+td.del{justify-content:flex-end}.x{min-width:44px;min-height:36px;font-size:16px}
+}
+#lock{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}#lock form{width:100%;max-width:340px;margin:0}[hidden]{display:none!important}
+</style></head><body><div id="lock"><form id="lf" class="card"><h1>🔒 Expense Monitor</h1><p style="color:var(--mu);margin-top:0">Enter the password to continue.</p>
+<input type="password" id="pw" placeholder="Password" autocomplete="current-password" style="width:100%" autofocus>
+<p id="pe" hidden style="color:#c0392b;margin:8px 0 0">Wrong password.</p><button style="width:100%;margin-top:10px">Unlock</button></form></div>
+<main id="app" hidden>
+<h1>Expense Monitor</h1>
+<div class="card"><div class="row"><button id="up">Open data file</button><button class="g" id="ne">Start empty</button><button id="dl" hidden>Download data</button><input type="file" id="fi" accept=".json,application/json" hidden><button class="g" id="lk">Lock</button></div>
+<p id="st" style="margin:8px 0 0;color:var(--mu);font-size:13px">Open your saved JSON file to begin (or start empty).</p></div>
+<div id="body" hidden>
+
+<div class="card"><h2>Add expense</h2>
+<form id="f">
+<input type="date" id="d" required>
+<input id="p" list="pl" placeholder="Primary (e.g. Transport)" required>
+<input id="s" list="sl" placeholder="Sub (e.g. Cab)" required>
+<input id="nt" placeholder="Note (e.g. Uber)">
+<input id="tg" placeholder="Tag (e.g. family)">
+<input type="number" inputmode="decimal" id="a" min="0" step="any" placeholder="₹ Amount" required>
+<button>Add</button></form>
+<datalist id="pl"></datalist><datalist id="sl"></datalist>
+<small style="color:var(--mu)">Type any new category or sub-category and it is created automatically.</small></div>
+
+<div class="card"><div class="row"><span>From</span><input type="date" id="from"><span>To</span><input type="date" id="to">
+<select id="fp"></select><button class="g" id="clr">Clear</button></div></div>
+
+<div class="grid" id="stats" style="margin-bottom:14px"></div>
+
+<div class="card" id="loancard"><h2>Loan tracker</h2><div id="loan"></div></div>
+
+<div class="cols">
+<div class="card"><h2>By primary category</h2><div id="bp"></div></div>
+<div class="card"><h2 id="bh">By sub-category</h2><div id="bs"></div></div>
+<div class="card"><h2>Daily flow</h2><div id="bd"></div></div>
+<div class="card"><h2>By tag</h2><div id="bt"></div></div>
+</div>
+
+<div class="card"><h2>All entries</h2><div class="t"><table id="tb"></table></div></div>
+
+<div class="card"><h2>Manage</h2>
+<div class="row"><select id="rk"><option value="p">Primary</option><option value="s">Sub-category</option></select>
+<input id="ro" placeholder="Old name"><input id="rn" placeholder="New name"><button id="rb">Rename everywhere</button></div>
+<p class="row" style="margin-top:10px"><button class="g" id="csv">Show CSV</button></p>
+<textarea id="cv" rows="6" style="width:100%;display:none"></textarea>
+<small style="color:var(--mu)">Spending excludes Investment and Obligations (loan). Nothing is stored online: your data lives only in your JSON file.</small></div>
+</div></main>
+<script>
+const NON=["Investment","Obligations"],PW="OpenThis";
+let E=[],LOAN={total:0,before:0},dirty=false,loaded=false;
+let selP=null,selS=null;const OD=new Set();
+const $=i=>document.getElementById(i),esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const R=n=>"₹"+Math.round(n).toLocaleString("en-IN");
+const save=()=>setDirty(true);
+const grp=(L,fn)=>{const m={};L.forEach(e=>{const k=fn(e);m[k]=(m[k]||0)+e.a});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
+function bars(el,rows,tot){$(el).innerHTML=rows.length?rows.map(([k,v])=>{const [l,x]=k.split("|");return `<div class="bar"><span>${esc(l)}${x?` <small>${esc(x)}</small>`:""}</span><i style="width:${Math.max(2,v/rows[0][1]*100)}%"></i><span>${R(v)} <small>${tot?Math.round(v/tot*100)+"%":""}</small></span></div>`}).join(""):"<small>No data</small>"}
+function render(){
+ const fp=$("fp"),cur=fp.value,ps=[...new Set(E.map(e=>e.p))].sort();
+ fp.innerHTML='<option value="">All primaries</option>'+ps.map(p=>`<option${p==cur?" selected":""}>${esc(p)}</option>`).join("");
+ $("pl").innerHTML=ps.map(p=>`<option value="${esc(p)}">`).join("");
+ $("sl").innerHTML=[...new Set(E.map(e=>e.s))].sort().map(p=>`<option value="${esc(p)}">`).join("");
+ const f=E.filter(e=>(!$("from").value||e.d>=$("from").value)&&(!$("to").value||e.d<=$("to").value)&&(!fp.value||e.p==fp.value)).sort((a,b)=>b.d.localeCompare(a.d));
+ const tot=f.reduce((s,e)=>s+e.a,0),sp=f.filter(e=>!NON.includes(e.p)).reduce((s,e)=>s+e.a,0),inv=f.filter(e=>e.p=="Investment").reduce((s,e)=>s+e.a,0);
+ const days=new Set(f.map(e=>e.d)).size||1;
+ $("stats").innerHTML=[["Total outflow",tot],["Spending",sp],["Invested",inv],["Spending / day",sp/days]].map(([l,v])=>`<div class="card stat" style="margin:0"><b>${R(v)}</b><span>${l}</span></div>`).join("");
+ $("loancard").style.display=LOAN.total?"":"none";const paid=LOAN.before+E.filter(e=>e.s=="Loan EMI").reduce((s,e)=>s+e.a,0),pc=Math.min(100,paid/LOAN.total*100);
+ $("loan").innerHTML=`<div class="prog"><i style="width:${pc}%"></i></div><p style="margin:8px 0 0">${R(paid)} paid of ${R(LOAN.total)} (${Math.round(pc)}%) · <b>${R(LOAN.total-paid)}</b> remaining</p>`;
+ $("bp").innerHTML=grp(f,e=>e.p).map(([p,v],i,a)=>`<div class="bar tg${p==selP?" on":""}" data-k="${esc(p)}"><span>${esc(p)}</span><i style="width:${Math.max(2,v/a[0][1]*100)}%"></i><span>${R(v)} <small>${Math.round(v/tot*100)}%</small></span></div>`).join("")||"<small>No data</small>";
+ const fs=selP?f.filter(e=>e.p==selP):f;
+ $("bh").textContent=selP?"Sub-categories in "+selP:"By sub-category";
+ $("bs").innerHTML=(selP?'<div class="row" style="margin-bottom:6px"><button class="g" id="sx">Show all</button></div>':"")+(grp(fs,e=>e.s+"|"+e.p).map(([k,v],i,a)=>{const [s,p]=k.split("|"),o=selS==k;return `<div class="bar tg${o?" on":""}" data-k="${esc(k)}"><span>${o?"▾":"▸"} ${esc(s)}${selP?"":` <small>${esc(p)}</small>`}</span><i style="width:${Math.max(2,v/a[0][1]*100)}%;background:var(--ac2)"></i><span>${R(v)}</span></div>`+(o?'<div class="ent">'+fs.filter(e=>e.s==s&&e.p==p).map(e=>`<div class="en"><span>${e.d.slice(5)} · ${esc(e.n||e.s)}${e.t?` <small>#${esc(e.t)}</small>`:""}</span><span>${R(e.a)}</span></div>`).join("")+"</div>":"")}).join("")||"<small>No data</small>");
+ bars("bt",grp(f.filter(e=>e.t),e=>e.t),tot);
+ let run=0;const dd=grp(f,e=>e.d).sort((a,b)=>a[0].localeCompare(b[0])),mx=Math.max(0,...dd.map(x=>x[1]));
+ $("bd").innerHTML=dd.map(([d,v])=>{run+=v;const o=OD.has(d);return `<div class="bar tg" data-k="${d}"><span>${o?"▾":"▸"} ${d.slice(5)}</span><i style="width:${Math.max(2,v/mx*100)}%;background:var(--ac2)"></i><span>${R(v)} <small>Σ ${R(run)}</small></span></div>`+(o?'<div class="ent">'+f.filter(e=>e.d==d).map(e=>`<div class="en"><span>${esc(e.n||e.s)} <small>${esc(e.p)} › ${esc(e.s)}${e.t?" #"+esc(e.t):""}</small></span><span>${R(e.a)}</span></div>`).join("")+"</div>":"")}).join("")||"<small>No data</small>";
+ $("tb").innerHTML="<tr><th>Date<th>Primary<th>Sub<th>Note<th>Tag<th class=n>₹<th></tr>"+f.map(e=>`<tr><td data-l="Date">${e.d.slice(5)}<td data-l="Category">${esc(e.p)}<td data-l="Sub"><span class=pill>${esc(e.s)}</span><td data-l="Note">${esc(e.n)}<td data-l="Tag">${esc(e.t)}<td class=n data-l="Amount">₹${e.a.toLocaleString("en-IN")}<td class=del><button class=x data-i="${E.indexOf(e)}" title="Delete">✕</button></tr>`).join("");
+}
+$("bp").onclick=ev=>{const r=ev.target.closest(".tg");if(!r)return;selP=selP==r.dataset.k?null:r.dataset.k;selS=null;render()};
+$("bs").onclick=ev=>{if(ev.target.id=="sx"){selP=selS=null;return render()}const r=ev.target.closest(".tg");if(!r)return;selS=selS==r.dataset.k?null:r.dataset.k;render()};
+$("bd").onclick=ev=>{const r=ev.target.closest(".tg");if(!r)return;const k=r.dataset.k;OD.has(k)?OD.delete(k):OD.add(k);render()};
+$("d").value=new Date().toISOString().slice(0,10);
+$("f").onsubmit=ev=>{ev.preventDefault();const c=s=>s.trim();E.push({d:$("d").value,p:c($("p").value),s:c($("s").value),n:c($("nt").value),t:c($("tg").value).toLowerCase(),a:+$("a").value});
+ ["p","s","nt","tg","a"].forEach(i=>$(i).value="");save();render()};
+$("tb").onclick=ev=>{const i=ev.target.dataset.i;if(i!==undefined&&confirm("Delete this entry?")){E.splice(+i,1);save();render()}};
+["from","to","fp"].forEach(i=>$(i).onchange=render);
+$("clr").onclick=()=>{["from","to","fp"].forEach(i=>$(i).value="");render()};
+$("rb").onclick=()=>{const k=$("rk").value,o=$("ro").value.trim(),n=$("rn").value.trim();if(!o||!n)return;E.forEach(e=>{if(e[k]==o)e[k]=n});$("ro").value=$("rn").value="";save();render()};
+$("csv").onclick=()=>{const t=$("cv");t.value="date,primary,sub,note,tag,amount\n"+E.map(e=>[e.d,e.p,e.s,e.n,e.t,e.a].map(v=>`"${v}"`).join(",")).join("\n");t.style.display="block";t.select()};
+
+function setDirty(d){dirty=d;$("st").textContent=!loaded?"":d?"● Unsaved changes. Download your file.":"✓ All changes saved to file";$("dl").className=d?"":"g"}
+function start(entries,loan){E=entries;LOAN=loan||{total:0,before:0};loaded=true;$("body").hidden=false;$("dl").hidden=false;$("up").className="g";render();setDirty(false)}
+$("up").onclick=()=>$("fi").click();
+$("fi").onchange=async ev=>{const f=ev.target.files[0];if(!f)return;try{const j=JSON.parse(await f.text());if(!Array.isArray(j.entries))throw 0;
+ start(j.entries.map(e=>({d:String(e.d),p:String(e.p),s:String(e.s),n:e.n||"",t:e.t||"",a:+e.a||0})),j.loan)}catch(x){alert("This doesn't look like a valid expense data file.")}ev.target.value=""};
+$("ne").onclick=()=>start([],null);
+$("dl").onclick=()=>{const b=new Blob([JSON.stringify({app:"expense-monitor",version:1,saved:new Date().toISOString(),loan:LOAN,entries:E},null,1)],{type:"application/json"});
+ const u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download="expense-data.json";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);setDirty(false)};
+$("lk").onclick=()=>{if(!dirty||confirm("You have unsaved changes. Lock anyway?")){dirty=false;location.reload()}};
+addEventListener("beforeunload",ev=>{if(dirty){ev.preventDefault();ev.returnValue=""}});
+$("lf").onsubmit=ev=>{ev.preventDefault();if($("pw").value===PW){$("lock").hidden=true;$("app").hidden=false}else{$("pe").hidden=false;$("pw").value="";$("pw").focus()}};
+render();
+</script></body></html>

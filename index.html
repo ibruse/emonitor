@@ -16,7 +16,7 @@ h1{font-size:22px;margin:4px 0 14px}h2{font-size:14px;margin:0 0 10px;color:var(
 .cols{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
 input,select,button,textarea{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:7px 9px;min-width:0}
 button{cursor:pointer;background:var(--ac);color:#fff;border:0}button.g{background:var(--bg);color:var(--tx);border:1px solid var(--bd)}
-form,.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}form input{flex:1 1 120px}
+form,.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}form input,form select{flex:1 1 120px}
 .bar{display:grid;grid-template-columns:minmax(90px,38%) 1fr auto;gap:8px;align-items:center;margin:5px 0;font-size:13px}
 .bar i{display:block;height:10px;border-radius:5px;background:var(--ac)}.bar small{color:var(--mu)}
 .t{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--bd);white-space:nowrap}td.n,th.n{text-align:right}
@@ -25,7 +25,9 @@ form,.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}form input{flex
 .tg{cursor:pointer;padding:3px 4px;border-radius:6px}.tg:hover{background:var(--bg)}
 .on{background:var(--bg);font-weight:600}
 .ent{margin:2px 0 6px 18px;font-size:12px;color:var(--mu)}.en{display:flex;justify-content:space-between;gap:8px;padding:2px 0}
-.x{background:none;color:var(--mu);padding:0 6px}
+.x{background:none;color:var(--mu);padding:0 6px}.warn{color:var(--ac2);font-size:12px}
+#dd{position:absolute;z-index:50;background:var(--card);border:1px solid var(--bd);border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.18);max-height:240px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#dd div{padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--bd)}#dd div:last-child{border:0}#dd div:hover{background:var(--bg)}#dd div.cur{font-weight:600;color:var(--ac)}
 button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}input[type=date]{min-height:36px}
 @media(max-width:600px){
 main{padding:12px calc(12px + env(safe-area-inset-right,0px)) 28px calc(12px + env(safe-area-inset-left,0px))}
@@ -52,89 +54,156 @@ td.del{justify-content:flex-end}.x{min-width:44px;min-height:36px;font-size:16px
 <p id="st" style="margin:8px 0 0;color:var(--mu);font-size:13px">Open your saved JSON file to begin (or start empty).</p></div>
 <div id="body" hidden>
 
-<div class="card"><h2>Add expense</h2>
+<div class="card"><h2 id="fh">Add entry</h2>
 <form id="f">
 <input type="date" id="d" required>
-<input id="p" list="pl" placeholder="Primary (e.g. Transport)" required>
-<input id="s" list="sl" placeholder="Sub (e.g. Cab)" required>
+<select id="ty" title="Type"><option value="expense">expense</option><option value="investment">investment</option><option value="obligation">obligation</option><option value="transfer">transfer</option></select>
+<input id="p" autocomplete="off" placeholder="Category (e.g. Transport)" required>
+<input id="s" autocomplete="off" placeholder="Sub (e.g. Cab)" required>
 <input id="nt" placeholder="Note (e.g. Uber)">
-<input id="tg" placeholder="Tag (e.g. family)">
+<input id="tg" autocomplete="off" placeholder="For (self / family / common)">
 <input type="number" inputmode="decimal" id="a" min="0" step="any" placeholder="₹ Amount" required>
-<button>Add</button></form>
-<datalist id="pl"></datalist><datalist id="sl"></datalist>
-<small style="color:var(--mu)">Type any new category or sub-category and it is created automatically.</small></div>
+<button id="fb">Add</button><button type="button" class="g" id="fc" hidden>Cancel edit</button></form>
+<small style="color:var(--mu)">Type any new category or sub-category and it is created automatically. Type is suggested from the category.</small></div>
 
-<div class="card"><div class="row"><span>From</span><input type="date" id="from"><span>To</span><input type="date" id="to">
-<select id="fp"></select><button class="g" id="clr">Clear</button></div></div>
+<div class="card"><h2>Filters</h2>
+<div class="row"><span>From</span><input type="date" id="from"><span>To</span><input type="date" id="to"></div>
+<div class="row" style="margin-top:8px"><select id="ft"><option value="expense">Spending only</option><option value="">All types</option><option value="investment">Investments</option><option value="obligation">Obligations</option><option value="transfer">Transfers</option></select>
+<select id="fp"></select><select id="fs"></select><select id="fo"></select></div>
+<div class="row" style="margin-top:8px"><input type="search" id="q" placeholder="Search note, category, amount…" style="flex:1 1 200px"><button class="g" id="clr">Reset filters</button></div>
+<p id="fsum" style="margin:8px 0 0;color:var(--mu);font-size:13px"></p></div>
 
-<div class="grid" id="stats" style="margin-bottom:14px"></div>
+<div class="grid" id="stats" style="margin-bottom:6px"></div>
+<p style="margin:0 0 14px;color:var(--mu);font-size:12px">These totals always cover all entries. Filters only change the charts and the list below.</p>
 
-<div class="card" id="loancard"><h2>Loan tracker</h2><div id="loan"></div></div>
+<div class="card" id="loancard"><h2>Loan tracker</h2><div id="loan"></div>
+<details style="margin-top:10px"><summary style="cursor:pointer;color:var(--mu)">Loan settings</summary>
+<div class="row" style="margin-top:8px"><input type="number" inputmode="decimal" id="lt" min="0" step="any" placeholder="Total loan ₹"><input type="number" inputmode="decimal" id="lb" min="0" step="any" placeholder="Already paid before ₹"><button id="ls">Save loan</button></div>
+<small style="color:var(--mu)">Each EMI you add with type obligation and sub-category “Loan EMI” is counted as paid.</small></details></div>
 
 <div class="cols">
-<div class="card"><h2>By primary category</h2><div id="bp"></div></div>
+<div class="card"><h2>By category</h2><div id="bp"></div></div>
 <div class="card"><h2 id="bh">By sub-category</h2><div id="bs"></div></div>
 <div class="card"><h2>Daily flow</h2><div id="bd"></div></div>
-<div class="card"><h2>By tag</h2><div id="bt"></div></div>
+<div class="card"><h2>By person (for)</h2><div id="bt"></div><small style="color:var(--mu)">Tap a name to filter the whole page. Tap again to undo.</small></div>
 </div>
 
-<div class="card"><h2>All entries</h2><div class="t"><table id="tb"></table></div></div>
+<div class="card"><div class="row" style="justify-content:space-between"><h2 id="th" style="margin:0">Entries</h2><button class="g" id="clr2">Reset filters</button></div><p id="tsum" style="margin:6px 0 10px;color:var(--mu);font-size:13px"></p><div class="t"><table id="tb"></table></div></div>
 
 <div class="card"><h2>Manage</h2>
-<div class="row"><select id="rk"><option value="p">Primary</option><option value="s">Sub-category</option></select>
+<div class="row"><select id="rk"><option value="category">Category</option><option value="sub">Sub-category</option><option value="for">For</option></select>
 <input id="ro" placeholder="Old name"><input id="rn" placeholder="New name"><button id="rb">Rename everywhere</button></div>
 <p class="row" style="margin-top:10px"><button class="g" id="csv">Show CSV</button></p>
 <textarea id="cv" rows="6" style="width:100%;display:none"></textarea>
-<small style="color:var(--mu)">Spending excludes Investment and Obligations (loan). Nothing is stored online: your data lives only in your JSON file.</small></div>
+<small style="color:var(--mu)">Spending counts only entries of type “expense”; investments, loan EMI and transfers are tracked separately. Nothing is stored online: your data lives only in your JSON file.</small></div>
 </div></main>
 <script>
-const NON=["Investment","Obligations"],PW="OpenThis";
-let E=[],LOAN={total:0,before:0},dirty=false,loaded=false;
+const PW="OpenThis",TYPES=["expense","investment","obligation","transfer"];
+let E=[],LOAN={total:0,before:0},dirty=false,loaded=false,editI=null;
 let selP=null,selS=null;const OD=new Set();
 const $=i=>document.getElementById(i),esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const R=n=>"₹"+Math.round(n).toLocaleString("en-IN");
+const today=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const fd=d=>{const [y,m,x]=String(d).split("-");return (+x)+" "+MON[+m-1]},fdy=d=>fd(d)+" "+String(d).slice(0,4);
 const save=()=>setDirty(true);
-const grp=(L,fn)=>{const m={};L.forEach(e=>{const k=fn(e);m[k]=(m[k]||0)+e.a});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
-function bars(el,rows,tot){$(el).innerHTML=rows.length?rows.map(([k,v])=>{const [l,x]=k.split("|");return `<div class="bar"><span>${esc(l)}${x?` <small>${esc(x)}</small>`:""}</span><i style="width:${Math.max(2,v/rows[0][1]*100)}%"></i><span>${R(v)} <small>${tot?Math.round(v/tot*100)+"%":""}</small></span></div>`}).join(""):"<small>No data</small>"}
+const idn=e=>+String(e.id||"").replace(/\D/g,"")||0;
+const nid=()=>"e"+String(Math.max(0,...E.map(idn))+1).padStart(3,"0");
+const grp=(L,fn)=>{const m={};L.forEach(e=>{const k=fn(e);m[k]=(m[k]||0)+e.amount});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
+function bars(el,rows,tot){$(el).innerHTML=rows.length?rows.map(([k,v])=>`<div class="bar"><span>${esc(k)}</span><i style="width:${Math.max(2,v/rows[0][1]*100)}%"></i><span>${R(v)} <small>${tot?Math.round(v/tot*100)+"%":""}</small></span></div>`).join(""):"<small>No data</small>"}
 function render(){
- const fp=$("fp"),cur=fp.value,ps=[...new Set(E.map(e=>e.p))].sort();
- fp.innerHTML='<option value="">All primaries</option>'+ps.map(p=>`<option${p==cur?" selected":""}>${esc(p)}</option>`).join("");
- $("pl").innerHTML=ps.map(p=>`<option value="${esc(p)}">`).join("");
- $("sl").innerHTML=[...new Set(E.map(e=>e.s))].sort().map(p=>`<option value="${esc(p)}">`).join("");
- const f=E.filter(e=>(!$("from").value||e.d>=$("from").value)&&(!$("to").value||e.d<=$("to").value)&&(!fp.value||e.p==fp.value)).sort((a,b)=>b.d.localeCompare(a.d));
- const tot=f.reduce((s,e)=>s+e.a,0),sp=f.filter(e=>!NON.includes(e.p)).reduce((s,e)=>s+e.a,0),inv=f.filter(e=>e.p=="Investment").reduce((s,e)=>s+e.a,0);
- const days=new Set(f.map(e=>e.d)).size||1;
- $("stats").innerHTML=[["Total outflow",tot],["Spending",sp],["Invested",inv],["Spending / day",sp/days]].map(([l,v])=>`<div class="card stat" style="margin:0"><b>${R(v)}</b><span>${l}</span></div>`).join("");
- $("loancard").style.display=LOAN.total?"":"none";const paid=LOAN.before+E.filter(e=>e.s=="Loan EMI").reduce((s,e)=>s+e.a,0),pc=Math.min(100,paid/LOAN.total*100);
- $("loan").innerHTML=`<div class="prog"><i style="width:${pc}%"></i></div><p style="margin:8px 0 0">${R(paid)} paid of ${R(LOAN.total)} (${Math.round(pc)}%) · <b>${R(LOAN.total-paid)}</b> remaining</p>`;
- $("bp").innerHTML=grp(f,e=>e.p).map(([p,v],i,a)=>`<div class="bar tg${p==selP?" on":""}" data-k="${esc(p)}"><span>${esc(p)}</span><i style="width:${Math.max(2,v/a[0][1]*100)}%"></i><span>${R(v)} <small>${Math.round(v/tot*100)}%</small></span></div>`).join("")||"<small>No data</small>";
- const fs=selP?f.filter(e=>e.p==selP):f;
+ const ft=$("ft").value,base=E.filter(e=>!ft||e.type==ft);
+ const fill=(id,all,vals,none)=>{const el=$(id),cur=el.value;el.innerHTML=`<option value="">${all}</option>`+vals.map(([v,l])=>`<option value="${esc(v)}"${v==cur?" selected":""}>${esc(l||v)}</option>`).join("");return el.value};
+ const fpv=fill("fp","All categories",[...new Set(base.map(e=>e.category))].sort().map(x=>[x]));
+ const fsv=fill("fs","All sub-categories",[...new Set(base.filter(e=>!fpv||e.category==fpv).map(e=>e.sub))].sort().map(x=>[x]));
+ const fors=[...new Set(base.map(e=>e.for).filter(Boolean))].sort();if(base.some(e=>!e.for))fors.push("__none");
+ const fov=fill("fo","All people",fors.map(x=>x=="__none"?[x,"unassigned"]:[x]));
+ const q=$("q").value.trim().toLowerCase(),from=$("from").value,to=$("to").value;
+ const match=(e,skipFor)=>(!from||e.date>=from)&&(!to||e.date<=to)&&(!fpv||e.category==fpv)&&(!fsv||e.sub==fsv)&&(skipFor||!fov||(fov=="__none"?!e.for:e.for==fov))&&(!q||[e.note,e.category,e.sub,e.for,e.type,e.amount].join(" ").toLowerCase().includes(q));
+ const f0=E.filter(e=>match(e)),fPer=E.filter(e=>match(e,true)&&(!ft||e.type==ft));
+ const f=f0.filter(e=>!ft||e.type==ft).sort((a,b)=>b.date.localeCompare(a.date)||idn(b)-idn(a));
+ const sum=t=>E.filter(e=>e.type==t).reduce((s,e)=>s+e.amount,0);
+ const tot=E.reduce((s,e)=>s+e.amount,0),sp=sum("expense"),inv=sum("investment"),oth=sum("obligation")+sum("transfer");
+ const days=new Set(E.filter(e=>e.type=="expense").map(e=>e.date)).size||1;
+ const ftot=f.reduce((s,e)=>s+e.amount,0);
+ const tl={expense:"Spending only",investment:"Investments",obligation:"Obligations",transfer:"Transfers"}[ft]||"All types";
+ const act=[tl,from&&"from "+from,to&&"to "+to,fpv&&fpv,fsv&&fsv,fov&&"for: "+(fov=="__none"?"unassigned":fov),q&&"search “"+q+"”"].filter(Boolean).join(" · ");
+ $("fsum").textContent=`Showing ${f.length} of ${E.length} entries · ${R(ftot)} · ${act}`;
+ $("tsum").textContent=`${f.length} entries · ${R(ftot)} · ${act}`;
+ $("stats").innerHTML=[["Total outflow",tot],["Spending",sp],["Invested",inv],["Loan & transfers",oth],["Spending / day",sp/days]].map(([l,v])=>`<div class="card stat" style="margin:0"><b>${R(v)}</b><span>${l}</span></div>`).join("");
+ const paid=LOAN.before+E.filter(e=>e.sub=="Loan EMI").reduce((s,e)=>s+e.amount,0),pc=LOAN.total?Math.min(100,paid/LOAN.total*100):0;
+ $("loan").innerHTML=LOAN.total?`<div class="prog"><i style="width:${pc}%"></i></div><p style="margin:8px 0 0">${R(paid)} paid of ${R(LOAN.total)} (${Math.round(pc)}%) · <b>${R(LOAN.total-paid)}</b> remaining</p>`:"<small>No loan set yet. Open Loan settings below to add the total.</small>";
+ $("bp").innerHTML=grp(f,e=>e.category).map(([p,v],i,a)=>`<div class="bar tg${p==selP?" on":""}" data-k="${esc(p)}"><span>${esc(p)}</span><i style="width:${Math.max(2,v/a[0][1]*100)}%"></i><span>${R(v)} <small>${Math.round(v/ftot*100)}%</small></span></div>`).join("")||"<small>No data</small>";
+ const fs=selP?f.filter(e=>e.category==selP):f;
  $("bh").textContent=selP?"Sub-categories in "+selP:"By sub-category";
- $("bs").innerHTML=(selP?'<div class="row" style="margin-bottom:6px"><button class="g" id="sx">Show all</button></div>':"")+(grp(fs,e=>e.s+"|"+e.p).map(([k,v],i,a)=>{const [s,p]=k.split("|"),o=selS==k;return `<div class="bar tg${o?" on":""}" data-k="${esc(k)}"><span>${o?"▾":"▸"} ${esc(s)}${selP?"":` <small>${esc(p)}</small>`}</span><i style="width:${Math.max(2,v/a[0][1]*100)}%;background:var(--ac2)"></i><span>${R(v)}</span></div>`+(o?'<div class="ent">'+fs.filter(e=>e.s==s&&e.p==p).map(e=>`<div class="en"><span>${e.d.slice(5)} · ${esc(e.n||e.s)}${e.t?` <small>#${esc(e.t)}</small>`:""}</span><span>${R(e.a)}</span></div>`).join("")+"</div>":"")}).join("")||"<small>No data</small>");
- bars("bt",grp(f.filter(e=>e.t),e=>e.t),tot);
- let run=0;const dd=grp(f,e=>e.d).sort((a,b)=>a[0].localeCompare(b[0])),mx=Math.max(0,...dd.map(x=>x[1]));
- $("bd").innerHTML=dd.map(([d,v])=>{run+=v;const o=OD.has(d);return `<div class="bar tg" data-k="${d}"><span>${o?"▾":"▸"} ${d.slice(5)}</span><i style="width:${Math.max(2,v/mx*100)}%;background:var(--ac2)"></i><span>${R(v)} <small>Σ ${R(run)}</small></span></div>`+(o?'<div class="ent">'+f.filter(e=>e.d==d).map(e=>`<div class="en"><span>${esc(e.n||e.s)} <small>${esc(e.p)} › ${esc(e.s)}${e.t?" #"+esc(e.t):""}</small></span><span>${R(e.a)}</span></div>`).join("")+"</div>":"")}).join("")||"<small>No data</small>";
- $("tb").innerHTML="<tr><th>Date<th>Primary<th>Sub<th>Note<th>Tag<th class=n>₹<th></tr>"+f.map(e=>`<tr><td data-l="Date">${e.d.slice(5)}<td data-l="Category">${esc(e.p)}<td data-l="Sub"><span class=pill>${esc(e.s)}</span><td data-l="Note">${esc(e.n)}<td data-l="Tag">${esc(e.t)}<td class=n data-l="Amount">₹${e.a.toLocaleString("en-IN")}<td class=del><button class=x data-i="${E.indexOf(e)}" title="Delete">✕</button></tr>`).join("");
+ $("bs").innerHTML=(selP?'<div class="row" style="margin-bottom:6px"><button class="g" id="sx">Show all</button></div>':"")+(grp(fs,e=>e.sub+"|"+e.category).map(([k,v],i,a)=>{const [s,p]=k.split("|"),o=selS==k;return `<div class="bar tg${o?" on":""}" data-k="${esc(k)}"><span>${o?"▾":"▸"} ${esc(s)}${selP?"":` <small>${esc(p)}</small>`}</span><i style="width:${Math.max(2,v/a[0][1]*100)}%;background:var(--ac2)"></i><span>${R(v)}</span></div>`+(o?'<div class="ent">'+fs.filter(e=>e.sub==s&&e.category==p).map(e=>`<div class="en"><span>${fd(e.date)} · ${esc(e.note||e.sub)}${e.for?` <small>#${esc(e.for)}</small>`:""}</span><span>${R(e.amount)}</span></div>`).join("")+"</div>":"")}).join("")||"<small>No data</small>");
+ const ptot=fPer.reduce((s,e)=>s+e.amount,0),pr=grp(fPer,e=>e.for||"unassigned");
+ $("bt").innerHTML=(fov?'<div class="row" style="margin-bottom:6px"><button class="g" id="tx">Show all people</button></div>':"")+(pr.map(([k,v])=>`<div class="bar tg${(k==fov||(fov=="__none"&&k=="unassigned"))?" on":""}" data-k="${esc(k)}"><span>${esc(k)}</span><i style="width:${Math.max(2,v/pr[0][1]*100)}%"></i><span>${R(v)} <small>${ptot?Math.round(v/ptot*100):0}%</small></span></div>`).join("")||"<small>No data</small>");
+ let run=0;const dd=grp(f,e=>e.date).sort((a,b)=>a[0].localeCompare(b[0])),mx=Math.max(0,...dd.map(x=>x[1]));
+ $("bd").innerHTML=dd.map(([d,v])=>{run+=v;const o=OD.has(d);return `<div class="bar tg" data-k="${d}"><span>${o?"▾":"▸"} ${fd(d)}</span><i style="width:${Math.max(2,v/mx*100)}%;background:var(--ac2)"></i><span>${R(v)} <small>Σ ${R(run)}</small></span></div>`+(o?'<div class="ent">'+f.filter(e=>e.date==d).map(e=>`<div class="en"><span>${esc(e.note||e.sub)} <small>${esc(e.category)} › ${esc(e.sub)}${e.for?" #"+esc(e.for):""}</small></span><span>${R(e.amount)}</span></div>`).join("")+"</div>":"")}).join("")||"<small>No data</small>";
+ $("tb").innerHTML="<tr><th>Date<th>Type<th>Category<th>Sub<th>Note<th>For<th class=n>₹<th></tr>"+f.map(e=>`<tr><td data-l="Date">${fd(e.date)}<td data-l="Type">${esc(e.type)}<td data-l="Category">${esc(e.category)}<td data-l="Sub"><span class=pill>${esc(e.sub)}</span><td data-l="Note">${esc(e.note)}${e.review?` <span class=warn>⚠ ${esc(e.review)}</span>`:""}<td data-l="For">${esc(e.for)||"?"}<td class=n data-l="Amount">₹${e.amount.toLocaleString("en-IN")}<td class=del><button class="x" data-e="${E.indexOf(e)}" title="Edit">✎</button><button class="x" data-i="${E.indexOf(e)}" title="Delete">✕</button></tr>`).join("");
 }
 $("bp").onclick=ev=>{const r=ev.target.closest(".tg");if(!r)return;selP=selP==r.dataset.k?null:r.dataset.k;selS=null;render()};
 $("bs").onclick=ev=>{if(ev.target.id=="sx"){selP=selS=null;return render()}const r=ev.target.closest(".tg");if(!r)return;selS=selS==r.dataset.k?null:r.dataset.k;render()};
 $("bd").onclick=ev=>{const r=ev.target.closest(".tg");if(!r)return;const k=r.dataset.k;OD.has(k)?OD.delete(k):OD.add(k);render()};
-$("d").value=new Date().toISOString().slice(0,10);
-$("f").onsubmit=ev=>{ev.preventDefault();const c=s=>s.trim();E.push({d:$("d").value,p:c($("p").value),s:c($("s").value),n:c($("nt").value),t:c($("tg").value).toLowerCase(),a:+$("a").value});
- ["p","s","nt","tg","a"].forEach(i=>$(i).value="");save();render()};
-$("tb").onclick=ev=>{const i=ev.target.dataset.i;if(i!==undefined&&confirm("Delete this entry?")){E.splice(+i,1);save();render()}};
-["from","to","fp"].forEach(i=>$(i).onchange=render);
-$("clr").onclick=()=>{["from","to","fp"].forEach(i=>$(i).value="");render()};
-$("rb").onclick=()=>{const k=$("rk").value,o=$("ro").value.trim(),n=$("rn").value.trim();if(!o||!n)return;E.forEach(e=>{if(e[k]==o)e[k]=n});$("ro").value=$("rn").value="";save();render()};
-$("csv").onclick=()=>{const t=$("cv");t.value="date,primary,sub,note,tag,amount\n"+E.map(e=>[e.d,e.p,e.s,e.n,e.t,e.a].map(v=>`"${v}"`).join(",")).join("\n");t.style.display="block";t.select()};
+
+const DEF={
+ expense:{Food:["Dining out","Groceries","Snacks & Drinks"],Transport:["Fuel","Cab","Tickets","Parking & tolls"],Household:["Supplies","Laundry","Furniture","Electronics & appliances"],Health:["Medicine","Medical supplies","Doctor","Tests"],Lifestyle:["Grooming","Clothing","Electronics & accessories","Entertainment","Stay"],"Gifts & Social":["Gift","Event"],Education:["Exam fee","Stationery","Course"],Bills:["Phone recharge","Electricity","Internet","Water"]},
+ investment:{Investment:["Gold","Silver","Mutual fund","Stocks","FD / RD"]},
+ obligation:{Obligations:["Loan EMI","Credit card bill","Insurance premium","Rent"]},
+ transfer:{Household:["Family monthly expense"],"Gifts & Social":["Lent"]}};
+function catMap(t){const m={};Object.entries(DEF[t]||{}).forEach(([c,ss])=>{m[c]=new Set(ss)});E.filter(e=>e.type==t).forEach(e=>{(m[e.category]=m[e.category]||new Set()).add(e.sub)});return m}
+const has=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
+const optCats=()=>Object.keys(catMap($("ty").value)).sort();
+const optSubs=()=>{const m=catMap($("ty").value),c=$("p").value.trim();return [...(has(m,c)?m[c]:new Set(Object.values(m).flatMap(x=>[...x])))].sort()};
+const optFor=()=>[...new Set(["self","family","common",...E.map(e=>e.for).filter(Boolean)])];
+const SRC={p:optCats,s:optSubs,tg:optFor};
+const dd=document.createElement("div");dd.id="dd";dd.hidden=true;document.body.appendChild(dd);
+function showDD(el,q){const all=SRC[el.id](),items=q?all.filter(x=>x.toLowerCase().includes(q.toLowerCase())):all;
+ if(!items.length){dd.hidden=true;return}
+ const r=el.getBoundingClientRect();dd.dataset.t=el.id;
+ dd.innerHTML=items.map(x=>`<div data-v="${esc(x)}"${x==el.value?' class="cur"':""}>${esc(x)}</div>`).join("");
+ dd.style.left=(r.left+scrollX)+"px";dd.style.top=(r.bottom+scrollY+2)+"px";dd.style.minWidth=Math.max(r.width,160)+"px";dd.hidden=false}
+dd.addEventListener("mousedown",ev=>{ev.preventDefault();const it=ev.target.closest("[data-v]");if(!it)return;const el=$(dd.dataset.t);el.value=it.dataset.v;el.dispatchEvent(new Event("input",{bubbles:true}));dd.hidden=true});
+["p","s","tg"].forEach(id=>{const el=$(id);
+ el.addEventListener("focus",()=>showDD(el,""));
+ el.addEventListener("click",()=>showDD(el,""));
+ el.addEventListener("input",()=>showDD(el,el.value.trim()));
+ el.addEventListener("blur",()=>{dd.hidden=true});
+ el.addEventListener("keydown",ev=>{if(ev.key=="Escape")dd.hidden=true})});
+addEventListener("resize",()=>{dd.hidden=true});
+function resetForm(){editI=null;["p","s","nt","a"].forEach(i=>$(i).value="");$("d").value=today();$("ty").value="expense";$("tg").value="self";$("fb").textContent="Add";$("fc").hidden=true;$("fh").textContent="Add entry"}
+resetForm();
+$("p").addEventListener("input",()=>{if(editI!==null)return;const c=$("p").value.trim();if(has(catMap($("ty").value),c))return;const t=TYPES.find(t=>has(catMap(t),c));if(t)$("ty").value=t});
+$("ty").addEventListener("change",()=>{if(editI===null){$("p").value=$("s").value=""}dd.hidden=true});
+$("f").onsubmit=ev=>{ev.preventDefault();const c=s=>s.trim();
+ const o={id:editI!==null?E[editI].id:nid(),date:$("d").value,type:$("ty").value,category:c($("p").value),sub:c($("s").value),note:c($("nt").value),for:c($("tg").value).toLowerCase(),amount:+$("a").value};
+ if(editI!==null)E[editI]=o;else E.push(o);
+ resetForm();save();render()};
+$("fc").onclick=resetForm;
+$("tb").onclick=ev=>{const b=ev.target.closest("button");if(!b)return;
+ if(b.dataset.e!==undefined){const e=E[+b.dataset.e];editI=+b.dataset.e;$("d").value=e.date;$("ty").value=e.type;$("p").value=e.category;$("s").value=e.sub;$("nt").value=e.note;$("tg").value=e.for;$("a").value=e.amount;$("fb").textContent="Save";$("fc").hidden=false;$("fh").textContent="Edit entry "+e.id+" · "+fdy(e.date);$("f").scrollIntoView({behavior:"smooth",block:"center"})}
+ else if(b.dataset.i!==undefined&&confirm("Delete this entry?")){const i=+b.dataset.i;if(editI!==null)resetForm();E.splice(i,1);save();render()}};
+["from","to","fp","fs","fo","ft"].forEach(i=>$(i).onchange=render);$("q").oninput=render;
+$("bt").onclick=ev=>{if(ev.target.id=="tx"){$("fo").value="";return render()}const r=ev.target.closest(".tg");if(!r)return;const k=r.dataset.k=="unassigned"?"__none":r.dataset.k;$("fo").value=$("fo").value==k?"":k;render()};
+$("ls").onclick=()=>{LOAN={total:+$("lt").value||0,before:+$("lb").value||0};save();render()};
+function resetFilters(){["from","to","fp","fs","fo","q"].forEach(i=>$(i).value="");$("ft").value="expense";selP=selS=null;render()}
+$("clr").onclick=$("clr2").onclick=resetFilters;
+$("rb").onclick=()=>{const k=$("rk").value,o=$("ro").value.trim(),n=$("rn").value.trim();if(!o||!n)return;E.forEach(e=>{if(e[k]==o)e[k]=k=="for"?n.toLowerCase():n});$("ro").value=$("rn").value="";save();render()};
+$("csv").onclick=()=>{const t=$("cv"),q=v=>`"${String(v).replace(/"/g,'""')}"`;t.value="id,date,type,category,sub,note,for,amount\n"+E.map(e=>[e.id,e.date,e.type,e.category,e.sub,e.note,e.for,e.amount].map(q).join(",")).join("\n");t.style.display="block";t.select()};
 
 function setDirty(d){dirty=d;$("st").textContent=!loaded?"":d?"● Unsaved changes. Download your file.":"✓ All changes saved to file";$("dl").className=d?"":"g"}
-function start(entries,loan){E=entries;LOAN=loan||{total:0,before:0};loaded=true;$("body").hidden=false;$("dl").hidden=false;$("up").className="g";render();setDirty(false)}
+function norm(e){
+ if(e.category===undefined&&e.p!==undefined) // old v1 file
+  return {id:"",date:String(e.d),type:e.p=="Investment"?"investment":e.p=="Obligations"?"obligation":"expense",category:String(e.p),sub:String(e.s),note:e.n||"",for:e.t||"",amount:+e.a||0};
+ const o={id:String(e.id||""),date:String(e.date),type:TYPES.includes(e.type)?e.type:"expense",category:String(e.category),sub:String(e.sub),note:e.note||"",for:e.for||"",amount:+e.amount||0};
+ if(e.review)o.review=String(e.review);return o}
+function start(entries,loan){E=entries;E.forEach(e=>{if(!e.id)e.id=nid()});LOAN=loan||{total:0,before:0};$("lt").value=LOAN.total||"";$("lb").value=LOAN.before||"";loaded=true;selP=selS=null;resetForm();$("body").hidden=false;$("dl").hidden=false;$("up").className="g";render();setDirty(false)}
 $("up").onclick=()=>$("fi").click();
 $("fi").onchange=async ev=>{const f=ev.target.files[0];if(!f)return;try{const j=JSON.parse(await f.text());if(!Array.isArray(j.entries))throw 0;
- start(j.entries.map(e=>({d:String(e.d),p:String(e.p),s:String(e.s),n:e.n||"",t:e.t||"",a:+e.a||0})),j.loan)}catch(x){alert("This doesn't look like a valid expense data file.")}ev.target.value=""};
+ start(j.entries.map(norm),j.loan)}catch(x){alert("This doesn't look like a valid expense data file.")}ev.target.value=""};
 $("ne").onclick=()=>start([],null);
-$("dl").onclick=()=>{const b=new Blob([JSON.stringify({app:"expense-monitor",version:1,saved:new Date().toISOString(),loan:LOAN,entries:E},null,1)],{type:"application/json"});
+$("dl").onclick=()=>{const b=new Blob([JSON.stringify({app:"expense-monitor",version:2,saved:new Date().toISOString(),loan:LOAN,types:TYPES,entries:E},null,1)],{type:"application/json"});
  const u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download="expense-data.json";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);setDirty(false)};
 $("lk").onclick=()=>{if(!dirty||confirm("You have unsaved changes. Lock anyway?")){dirty=false;location.reload()}};
 addEventListener("beforeunload",ev=>{if(dirty){ev.preventDefault();ev.returnValue=""}});
